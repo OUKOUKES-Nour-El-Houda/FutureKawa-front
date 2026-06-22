@@ -48,15 +48,15 @@ export const mockAlerts = [
   { id: "ALT-001", lotId: "LOT-BR-003", country: "Brésil",   type: "temperature", level: "critique", message: "Température critique : 23.4°C (seuil : 22°C)",             timestamp: "2026-06-18T08:14:00", acknowledged: false, emailSent: true  },
   { id: "ALT-002", lotId: "LOT-EC-003", country: "Équateur", type: "humidity",    level: "critique", message: "Humidité critique : 67.0% (seuil : 65%)",                  timestamp: "2026-06-18T07:45:00", acknowledged: false, emailSent: true  },
   { id: "ALT-003", lotId: "LOT-BR-006", country: "Brésil",   type: "expiry",      level: "critique", message: "LOT-BR-006 expiré depuis 35 jours",                        timestamp: "2026-06-17T23:59:00", acknowledged: false, emailSent: true  },
-  { id: "ALT-004", lotId: "LOT-BR-005", country: "Brésil",   type: "temperature", level: "haute",    message: "Température élevée : 22.0°C — surveiller",                 timestamp: "2026-06-18T06:30:00", acknowledged: false, emailSent: true  },
+  { id: "ALT-004", lotId: "LOT-BR-005", country: "Brésil",   type: "temperature", level: "haute",    message: "Température élevée : 22.0°C - surveiller",                 timestamp: "2026-06-18T06:30:00", acknowledged: false, emailSent: true  },
   { id: "ALT-005", lotId: "LOT-CO-004", country: "Colombie", type: "temperature", level: "haute",    message: "Température élevée : 22.8°C (seuil : 22°C)",               timestamp: "2026-06-17T22:10:00", acknowledged: true,  emailSent: true  },
   { id: "ALT-006", lotId: "LOT-CO-005", country: "Colombie", type: "expiry",      level: "haute",    message: "LOT-CO-005 expiré depuis 10 jours",                        timestamp: "2026-06-17T20:00:00", acknowledged: false, emailSent: true  },
   { id: "ALT-007", lotId: "LOT-EC-004", country: "Équateur", type: "expiry",      level: "haute",    message: "LOT-EC-004 expiré depuis 5 jours",                         timestamp: "2026-06-17T19:30:00", acknowledged: false, emailSent: false },
   { id: "ALT-008", lotId: "LOT-BR-008", country: "Brésil",   type: "humidity",    level: "moyenne",  message: "Humidité à surveiller : 64.8%",                             timestamp: "2026-06-17T16:00:00", acknowledged: true,  emailSent: false },
-  { id: "ALT-009", lotId: "LOT-CO-004", country: "Colombie", type: "humidity",    level: "moyenne",  message: "Humidité à 65.1% — proche du seuil critique",              timestamp: "2026-06-17T14:20:00", acknowledged: true,  emailSent: false },
-  { id: "ALT-010", lotId: "LOT-BR-005", country: "Brésil",   type: "expiry",      level: "moyenne",  message: "LOT-BR-005 expire dans 180 jours — planifier traitement",  timestamp: "2026-06-16T10:00:00", acknowledged: true,  emailSent: false },
-  { id: "ALT-011", lotId: "LOT-EC-003", country: "Équateur", type: "temperature", level: "moyenne",  message: "Température à 23.1°C — vérifier ventilation",               timestamp: "2026-06-16T08:45:00", acknowledged: true,  emailSent: true  },
-  { id: "ALT-012", lotId: "LOT-BR-003", country: "Brésil",   type: "humidity",    level: "haute",    message: "Humidité : 66.2% — risque de moisissure",                  timestamp: "2026-06-15T22:30:00", acknowledged: true,  emailSent: true  },
+  { id: "ALT-009", lotId: "LOT-CO-004", country: "Colombie", type: "humidity",    level: "moyenne",  message: "Humidité à 65.1% - proche du seuil critique",              timestamp: "2026-06-17T14:20:00", acknowledged: true,  emailSent: false },
+  { id: "ALT-010", lotId: "LOT-BR-005", country: "Brésil",   type: "expiry",      level: "moyenne",  message: "LOT-BR-005 expire dans 180 jours - planifier traitement",  timestamp: "2026-06-16T10:00:00", acknowledged: true,  emailSent: false },
+  { id: "ALT-011", lotId: "LOT-EC-003", country: "Équateur", type: "temperature", level: "moyenne",  message: "Température à 23.1°C - vérifier ventilation",               timestamp: "2026-06-16T08:45:00", acknowledged: true,  emailSent: true  },
+  { id: "ALT-012", lotId: "LOT-BR-003", country: "Brésil",   type: "humidity",    level: "haute",    message: "Humidité : 66.2% - risque de moisissure",                  timestamp: "2026-06-15T22:30:00", acknowledged: true,  emailSent: true  },
 ];
 
 // ─── Temperature / Humidity history (last 30 days) ───────────────────────────
@@ -182,8 +182,8 @@ export const getLotHistory = (lotId) => {
       value: parseFloat((humBase + (Math.cos(i * 0.4) * 2) + (Math.random() - 0.5) * 0.8).toFixed(1)),
     })),
     traceability: [
-      { date: lot.entryDate,     event: "Entrée en stock",           detail: `${lot.quantity} kg reçus — ${lot.origin}` },
-      { date: dateStr(60),       event: "Contrôle qualité",          detail: "Inspection visuelle et olfactive — conforme" },
+      { date: lot.entryDate,     event: "Entrée en stock",           detail: `${lot.quantity} kg reçus - ${lot.origin}` },
+      { date: dateStr(60),       event: "Contrôle qualité",          detail: "Inspection visuelle et olfactive - conforme" },
       { date: dateStr(30),       event: "Mesure T° & Humidité",      detail: `T: ${lot.temperature}°C | H: ${lot.humidity}%` },
       { date: dateStr(15),       event: "Réajustement stockage",     detail: "Déplacé vers zone optimisée" },
       { date: dateStr(0),        event: "Dernier contrôle",          detail: `Statut : ${lot.status}` },

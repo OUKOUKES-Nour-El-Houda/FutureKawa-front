@@ -5,10 +5,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import SidebarLogo from "../SidebarLogo/SidebarLogo";
 import { useAuth } from "../../../context/AuthContext";
 
-import logoutIcon from "../../../styles/icons/deconnexion.svg";
-import homeIcon    from "../../../styles/icons/home.svg";
-import lotsIcon    from "../../../styles/icons/box_add.svg";
-import warningIcon from "../../../styles/icons/warning.svg";
+import logoutIcon    from "../../../styles/icons/deconnexion.svg";
+import homeIcon      from "../../../styles/icons/home.svg";
+import lotsIcon      from "../../../styles/icons/box_add.svg";
+import warningIcon   from "../../../styles/icons/warning.svg";
+import warehouseIcon from "../../../styles/icons/warehouse.svg";
+import reportsIcon   from "../../../styles/icons/analytics.svg";
 import "./Sidebar.scss";
 
 const MenuIcon = ({ src, alt }) => (
@@ -20,7 +22,6 @@ const ROUTE_MAP = {
   "/lots":      "lots",
   "/alerts":    "alerts",
   "/storage":   "storage",
-  "/countries": "countries",
   "/reports":   "reports",
 };
 
@@ -68,19 +69,13 @@ const Sidebar = () => {
           { type: "divider" },
           {
             key: "storage",
-            icon: <span className="menu-icon-text">🏭</span>,
+            icon: <MenuIcon src={warehouseIcon} alt="entrepôts" />,
             label: "Entrepôts",
             onClick: () => navigate("/storage"),
           },
           {
-            key: "countries",
-            icon: <span className="menu-icon-text">🌍</span>,
-            label: "Pays",
-            onClick: () => navigate("/countries"),
-          },
-          {
             key: "reports",
-            icon: <span className="menu-icon-text">📊</span>,
+            icon: <MenuIcon src={reportsIcon} alt="rapports" />,
             label: "Rapports",
             onClick: () => navigate("/reports"),
           },

@@ -7,35 +7,37 @@ import Alerts from "../pages/Alerts/Alertes";
 import Lots from "../pages/Lots/Lots";
 import LotDetail from "../pages/Lots/LotDetail";
 import Storage from "../pages/Storage/Storage";
-import Countries from "../pages/Countries/Countries";
 import Reports from "../pages/Reports/Reports";
 import AppLayout from "../components/layout/AppLayout/AppLayout";
 import ProtectedRoute from "../components/common/ProtectedRoute";
 import { AuthProvider } from "../context/AuthContext";
+import { CountryProvider
 
+ } from "../context/country";
 const App = () => (
   <AuthProvider>
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <CountryProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/"           element={<Dashboard />} />
-        <Route path="/lots"       element={<Lots />} />
-        <Route path="/lots/:id"   element={<LotDetail />} />
-        <Route path="/alerts"     element={<Alerts />} />
-        <Route path="/storage"    element={<Storage />} />
-        <Route path="/countries"  element={<Countries />} />
-        <Route path="/reports"    element={<Reports />} />
-      </Route>
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/"           element={<Dashboard />} />
+          <Route path="/lots"       element={<Lots />} />
+          <Route path="/lots/:id"   element={<LotDetail />} />
+          <Route path="/alerts"     element={<Alerts />} />
+          <Route path="/storage"    element={<Storage />} />
+          <Route path="/reports"    element={<Reports />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </CountryProvider>
   </AuthProvider>
 );
 

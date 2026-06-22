@@ -6,7 +6,17 @@
 
 .dashboard-row { margin-top: 16px; }
 
+// Faire que toutes les KPI cards aient la même hauteur
+.kpi-row {
+  .ant-col {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 .kpi-card {
+  height: 100%;
+  width: 100%;
   border-radius: 12px !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 
@@ -15,6 +25,7 @@
     align-items: center;
     gap: 16px;
     padding: 20px !important;
+    height: 100%;
   }
 }
 

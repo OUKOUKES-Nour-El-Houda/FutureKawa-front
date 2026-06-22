@@ -25,7 +25,6 @@
     "react-dom": "^18.2.0",
     "react-intl": "^6.8.9",
     "react-is": "^19.2.7",
-    "react-leaflet": "^5.0.0",
     "react-redux": "^9.3.0",
     "react-router-dom": "^6.30.4",
     "react-simple-maps": "^3.0.0",

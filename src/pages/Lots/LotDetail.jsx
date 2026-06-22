@@ -1,50 +1,131 @@
-import React from "react";
+// Mock gardé en commentaire pour référence / fallback hors-ligne
+// import { mockLots, getLotHistory } from "../../services/mockData";
+
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Row, Col, Card, Descriptions, Tag, Timeline, Button, Typography } from "antd";
+import { Row, Col, Card, Descriptions, Tag, Button, Typography, Spin } from "antd";
 import { ArrowLeftOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
-import { mockLots, getLotHistory } from "../../services/mockData";
+import { lotsService } from "../../services/lots.service";
 import "./LotDetail.scss";
 
 const { Title, Text } = Typography;
 
 const STATUS_CONFIG = {
-  conforme:      { color: "success", label: "Conforme"      },
-  avertissement: { color: "warning", label: "Avertissement"  },
-  expiré:        { color: "error",   label: "Expiré"         },
+  conforme:  { color: "success", label: "Conforme"  },
+  en_alerte: { color: "warning", label: "En alerte" },
+  perime:    { color: "error",   label: "Périmé"    },
 };
 
-const MiniChart = ({ data, dataKey, color, refLine, unit }) => (
+const FLAG = { bresil: "🇧🇷", equateur: "🇪🇨", colombie: "🇨🇴" };
+
+// Seuils idéaux par pays (cf. cahier des charges)
+const THRESHOLDS = {
+  bresil:   { temp: 29, hum: 55 },
+  equateur: { temp: 31, hum: 60 },
+  colombie: { temp: 26, hum: 80 },
+};
+
+const MiniChart = ({ data, dataKey, color, refLine, unit, label }) => (
   <ResponsiveContainer width="100%" height={180}>
     <LineChart data={data} margin={{ top: 8, right: 16, left: -10, bottom: 0 }}>
       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-      <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={2} />
+      <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.max(0, Math.floor(data.length / 10) - 1)} />
       <YAxis tick={{ fontSize: 10 }} unit={unit} />
-      <Tooltip formatter={(v) => [`${v}${unit}`, dataKey]} />
-      <ReferenceLine y={refLine} stroke="#ff4d4f" strokeDasharray="4 4" label={{ value: `Seuil ${refLine}${unit}`, fontSize: 10, fill: "#ff4d4f" }} />
-      <Line dataKey="value" stroke={color} strokeWidth={2} dot={false} name={dataKey} />
+      <Tooltip formatter={(v) => [`${v}${unit}`, label]} />
+      {refLine && (
+        <ReferenceLine
+          y={refLine}
+          stroke="#1677ff"
+          strokeDasharray="4 4"
+          label={{ value: `Idéal ${refLine}${unit}`, fontSize: 10, fill: "#1677ff" }}
+        />
+      )}
+      <Line dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} name={label} />
     </LineChart>
   </ResponsiveContainer>
 );
 
 const LotDetail = () => {
+  // Le param contient "country_id__lot_id" (ex: bresil__LOT-BR-001)
   const { id } = useParams();
   const navigate = useNavigate();
-  const lot = mockLots.find((l) => l.id === id);
-  const history = getLotHistory(id);
 
-  if (!lot) {
+  const [countryId, lotId] = id?.includes("__") ? id.split("__") : [null, id];
+
+  const [lot, setLot]       = useState(null);
+  const [mesures, setMesures] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+
+  useEffect(() => {
+    if (!countryId || !lotId) {
+      setError("Identifiant de lot invalide.");
+      setLoading(false);
+      return;
+    }
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [lotData, mesuresData] = await Promise.all([
+          lotsService.getById(countryId, lotId),
+          lotsService.getMesures(countryId, lotId),
+        ]);
+        setLot(lotData);
+        setMesures(Array.isArray(mesuresData) ? mesuresData : []);
+      } catch (err) {
+        console.error("Erreur chargement détail lot:", err);
+        setError("Lot introuvable ou backend indisponible.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [countryId, lotId]);
+
+  if (loading) {
+    return <div style={{ textAlign: "center", padding: 50 }}><Spin /></div>;
+  }
+
+  if (error || !lot) {
     return (
       <div style={{ padding: 24 }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/lots")}>Retour</Button>
-        <Title level={4} style={{ marginTop: 16 }}>Lot introuvable : {id}</Title>
+        <Title level={4} style={{ marginTop: 16, color: "#ff4d4f" }}>
+          {error || `Lot introuvable : ${id}`}
+        </Title>
       </div>
     );
   }
 
-  const flag = lot.countryCode === "BR" ? "🇧🇷" : lot.countryCode === "CO" ? "🇨🇴" : "🇪🇨";
+  // Préparer les données pour les graphiques (groupées par jour)
+  const buildChartData = () => {
+    const byDay = {};
+    mesures.forEach(m => {
+      const day = new Date(m.date_mesure).toLocaleDateString("fr-FR");
+      if (!byDay[day]) byDay[day] = { date: day, temps: [], hums: [] };
+      byDay[day].temps.push(m.temperature);
+      byDay[day].hums.push(m.humidite);
+    });
+    return Object.values(byDay).map(d => ({
+      date: d.date,
+      temperature: parseFloat((d.temps.reduce((s, v) => s + v, 0) / d.temps.length).toFixed(1)),
+      humidite:    parseFloat((d.hums.reduce((s, v) => s + v, 0) / d.hums.length).toFixed(1)),
+    }));
+  };
+
+  const chartData  = buildChartData();
+  const thresholds = THRESHOLDS[countryId] || {};
+  const joursStock = lot.date_stockage
+    ? Math.floor((Date.now() - new Date(lot.date_stockage)) / 86400000)
+    : null;
+  const joursAvantPeremption = joursStock !== null ? Math.max(0, 365 - joursStock) : null;
+  const flag = FLAG[countryId] || "";
+  const statusCfg = STATUS_CONFIG[lot.statut] || { color: "default", label: lot.statut };
 
   return (
     <div className="lot-detail">
@@ -52,86 +133,96 @@ const LotDetail = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/lots")} style={{ marginRight: 16 }}>
           Retour
         </Button>
-        <Title level={4} style={{ margin: 0 }}>{flag} {lot.id}</Title>
-        <Tag color={STATUS_CONFIG[lot.status].color} style={{ marginLeft: 12, fontSize: 13 }}>
-          {STATUS_CONFIG[lot.status].label}
+        <Title level={4} style={{ margin: 0 }}>{flag} {lot.id_lot}</Title>
+        <Tag color={statusCfg.color} style={{ marginLeft: 12, fontSize: 13 }}>
+          {statusCfg.label}
         </Tag>
       </div>
 
       <Row gutter={[16, 16]}>
-        {/* Lot info */}
+        {/* Infos lot */}
         <Col xs={24} lg={12}>
           <Card title="Informations lot" variant="borderless">
             <Descriptions column={2} size="small" labelStyle={{ color: "#8c8c8c", fontWeight: 500 }}>
-              <Descriptions.Item label="ID">{lot.id}</Descriptions.Item>
-              <Descriptions.Item label="Variété">{lot.variety}</Descriptions.Item>
-              <Descriptions.Item label="Pays">{flag} {lot.country}</Descriptions.Item>
-              <Descriptions.Item label="Origine">{lot.origin}</Descriptions.Item>
-              <Descriptions.Item label="Quantité">{lot.quantity} kg</Descriptions.Item>
-              <Descriptions.Item label="Entrepôt">{lot.warehouse}</Descriptions.Item>
-              <Descriptions.Item label="Entrée">{lot.entryDate}</Descriptions.Item>
-              <Descriptions.Item label="Expiration">{lot.expiryDate}</Descriptions.Item>
-              <Descriptions.Item label="T° actuelle">
-                <span style={{ color: lot.temperature > 22 ? "#ff4d4f" : "#52c41a", fontWeight: 600 }}>
-                  {lot.temperature}°C
-                </span>
+              <Descriptions.Item label="ID">{lot.id_lot}</Descriptions.Item>
+              <Descriptions.Item label="Pays">{flag} {lot.pays_nom || countryId}</Descriptions.Item>
+              <Descriptions.Item label="Entrepôt">#{lot.id_entrepot}</Descriptions.Item>
+              <Descriptions.Item label="Utilisateur">#{lot.id_utilisateur}</Descriptions.Item>
+              <Descriptions.Item label="Date entrée">
+                {lot.date_stockage ? new Date(lot.date_stockage).toLocaleDateString("fr-FR") : "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Humidité actuelle">
-                <span style={{ color: lot.humidity > 65 ? "#ff4d4f" : "#52c41a", fontWeight: 600 }}>
-                  {lot.humidity}%
-                </span>
+              <Descriptions.Item label="Statut">
+                <Tag color={statusCfg.color}>{statusCfg.label}</Tag>
               </Descriptions.Item>
             </Descriptions>
           </Card>
         </Col>
 
-        {/* Storage info */}
+        {/* Infos stockage */}
         <Col xs={24} lg={12}>
           <Card title={<><EnvironmentOutlined /> Informations de stockage</>} variant="borderless">
             <Descriptions column={1} size="small" labelStyle={{ color: "#8c8c8c", fontWeight: 500 }}>
-              <Descriptions.Item label="Entrepôt">{lot.warehouse}</Descriptions.Item>
-              <Descriptions.Item label="Pays d'origine">{lot.country}</Descriptions.Item>
-              <Descriptions.Item label="Zone de production">{lot.origin}</Descriptions.Item>
+              <Descriptions.Item label="Pays">{flag} {lot.pays_nom || countryId}</Descriptions.Item>
               <Descriptions.Item label="Durée en stock">
-                {Math.floor((new Date("2026-06-18") - new Date(lot.entryDate)) / 86400000)} jours
+                {joursStock !== null ? (
+                  <span style={{ color: joursStock > 330 ? "#ff4d4f" : undefined, fontWeight: 600 }}>
+                    {joursStock} jours
+                  </span>
+                ) : "—"}
               </Descriptions.Item>
-              <Descriptions.Item label="Jours restants avant expiration">
-                {Math.max(0, Math.floor((new Date(lot.expiryDate) - new Date("2026-06-18")) / 86400000))} jours
+              <Descriptions.Item label="Jours avant péremption">
+                {joursAvantPeremption !== null ? (
+                  <span style={{ color: joursAvantPeremption < 30 ? "#ff4d4f" : joursAvantPeremption < 60 ? "#fa8c16" : "#52c41a", fontWeight: 600 }}>
+                    {joursAvantPeremption} jours
+                  </span>
+                ) : "—"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Mesures disponibles">
+                {mesures.length}
               </Descriptions.Item>
             </Descriptions>
           </Card>
         </Col>
 
-        {/* Temperature chart */}
+        {/* Graphique température */}
         <Col xs={24} lg={12}>
-          <Card title="Historique températures — 14 jours (°C)" variant="borderless">
-            <MiniChart data={history.temp} dataKey="Température" color="#fa8c16" refLine={22} unit="°C" />
+          <Card
+            title={`Historique températures (°C) - ${chartData.length} jour${chartData.length > 1 ? "s" : ""}`}
+            variant="borderless"
+          >
+            {chartData.length === 0 ? (
+              <Text type="secondary">Aucune mesure disponible.</Text>
+            ) : (
+              <MiniChart
+                data={chartData}
+                dataKey="temperature"
+                color="#fa8c16"
+                refLine={thresholds.temp}
+                unit="°C"
+                label="Température"
+              />
+            )}
           </Card>
         </Col>
 
-        {/* Humidity chart */}
+        {/* Graphique humidité */}
         <Col xs={24} lg={12}>
-          <Card title="Historique humidité — 14 jours (%)" variant="borderless">
-            <MiniChart data={history.humidity} dataKey="Humidité" color="#1677ff" refLine={65} unit="%" />
-          </Card>
-        </Col>
-
-        {/* Traceability timeline */}
-        <Col xs={24}>
-          <Card title="Traçabilité" variant="borderless">
-            <Timeline
-              mode="left"
-              items={history.traceability.map((t, i) => ({
-                label: <Text type="secondary" style={{ fontSize: 12 }}>{t.date}</Text>,
-                color: i === history.traceability.length - 1 ? "blue" : "gray",
-                children: (
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{t.event}</div>
-                    <div style={{ color: "#8c8c8c", fontSize: 12 }}>{t.detail}</div>
-                  </div>
-                ),
-              }))}
-            />
+          <Card
+            title={`Historique humidité (%) - ${chartData.length} jour${chartData.length > 1 ? "s" : ""}`}
+            variant="borderless"
+          >
+            {chartData.length === 0 ? (
+              <Text type="secondary">Aucune mesure disponible.</Text>
+            ) : (
+              <MiniChart
+                data={chartData}
+                dataKey="humidite"
+                color="#1677ff"
+                refLine={thresholds.hum}
+                unit="%"
+                label="Humidité"
+              />
+            )}
           </Card>
         </Col>
       </Row>

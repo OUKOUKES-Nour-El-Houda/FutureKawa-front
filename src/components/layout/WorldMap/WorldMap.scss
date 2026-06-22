@@ -69,3 +69,50 @@
   font-weight: 600;
   color: #1a1a2e;
 }
+
+.lf-btn-select {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #1677ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-top: 8px;
+
+  &:hover {
+    background-color: #0958ca;
+  }
+}
+
+.map-tooltip-container {
+  background: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.map-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.marker-selected {
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.3)) !important;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.5));
+  }
+}

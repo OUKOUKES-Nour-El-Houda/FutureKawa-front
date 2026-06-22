@@ -2,16 +2,26 @@ import api from "./api";
 
 export const lotsService = {
 
-  getAll: async () => {
-    return await api.get("/lots");
+  // Tous les lots (triés FIFO par date_stockage)
+  getAll: async (country = null) => {
+    const url = country && country !== "all"
+      ? `/api/central/stocks?country=${country}`
+      : "/api/central/stocks";
+    return await api.get(url);
   },
 
-  getById: async (lotId) => {
-    return await api.get(`/lots/${lotId}`);
+  // Détail d'un lot (country_id requis car central proxifie vers le backend pays)
+  getById: async (countryId, lotId) => {
+    return await api.get(`/api/central/stocks/${countryId}/${lotId}`);
   },
 
-  create: async (lot) => {
-    return await api.post("/lots", lot);
-  }
+  // Historique température/humidité d'un lot depuis sa date de stockage
+  getMesures: async (countryId, lotId) => {
+    return await api.get(`/api/central/stocks/${countryId}/${lotId}/mesures`);
+  },
 
+  // Créer un lot dans un backend pays via le central
+  create: async (countryId, lot) => {
+    return await api.post(`/api/central/${countryId}/lots`, lot);
+  },
 };
